@@ -1,10 +1,12 @@
 import requests
-from secrets import api_token
+
+from auth_token import AuthToken
 
 class SpotifyClient:
 
     def __init__(self):
-        self.api_token = api_token
+        self.auth_token = AuthToken()
+        self.access_token = self.auth_token.get_access_token();
 
     def get_user_playlist_collection(self):
         url = "https://api.spotify.com/v1/me/playlists"
@@ -12,7 +14,7 @@ class SpotifyClient:
             url,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_token}"
+                "Authorization": f"Bearer {self.access_token}"
             }
         )
 
@@ -22,7 +24,7 @@ class SpotifyClient:
             url,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_token}"
+                "Authorization": f"Bearer {self.access_token}"
             }
         )
 
@@ -32,7 +34,7 @@ class SpotifyClient:
             url,
             headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_token}"
+                "Authorization": f"Bearer {self.access_token}"
             }
         )
 
