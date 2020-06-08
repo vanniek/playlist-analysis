@@ -1,4 +1,3 @@
-import json
 import lyricsgenius
 
 from spotify_client import SpotifyClient
@@ -10,23 +9,36 @@ class LyricsFinder:
         a = AuthToken()
         self.lyrics_token = a.get_lyrics_genius_token()
         self.lyrics_genius = lyricsgenius.Genius(self.lyrics_token)
+        self.spotify_client = SpotifyClient()
 
-    def get_song(self, spotify_song_payload):
-        return spotify_song_payload['name']
+    def get_playlist_name(self, playlist_dict, playlist_index):
+        return list(playlist_dict.keys())[playlist_index]
 
-    def get_artist(self, spotify_song_payload):
-        return spotify_song_payload['artists'][0]['name']
+    def get_artist(self, playlist_dict, playlist_name, artist_index):
+        return list((playlist_dict[playlist_name][artist_index]).keys())[0]
+
+    def get_song(self, playlist_dict, playlist_name, artist_index, artist):
+        return playlist_dict[playlist_name][artist_index][artist]
 
     def get_lyrics(self, artist, song_title):
         return self.lyrics_genius.search_song(song_title, artist)
 
+    def extract_all_lyrics(self, playlist_dict, playlist_name):
+        lyrics = []
+        index = 0
+        playlist = playlist_dict[playlist_name]
+        while index < len(playlist):
+            artist = self.get_artist(playlist_dict, playlist_name, index)
+            song = self.get_song(playlist_dict, playlist_name, index, artist)
+            lyric = self.get_lyrics(artist, song)
+            lyrics.append(lyric.lyrics)
+            index += 1
+        return lyrics
+
 if __name__ == '__main__':
-    p = SpotifyClient()
-    response = p.get_user_playlist_collection()
-    songs = p.get_playlist("3sPFyyILp6d1Zc6SwCq9qH")
-    song = p.get_track("1w3QqUDJ4X339XBGjEJqdX")
+    client = SpotifyClient()
+    playlists = client.get_playlist_collection()
+    playlist_dict = client.get_playlist_dict(playlists)
     l = LyricsFinder()
-    artist = l.get_artist(song)
-    track = l.get_song(song)
-    lyrics = l.get_lyrics(artist, track)
+    lyrics = l.extract_all_lyrics(playlist_dict, 'passing through')
     print(lyrics)

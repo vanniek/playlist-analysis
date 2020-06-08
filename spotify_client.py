@@ -1,55 +1,39 @@
-import json
-
-import requests
-
-from auth_token import AuthToken
+from spotify_service import SpotifyService
 
 class SpotifyClient:
 
     def __init__(self):
-        self.auth_token = AuthToken()
-        self.access_token = self.auth_token.get_access_token()
+        self.service = SpotifyService()
 
-    def get_user_playlist_collection(self):
-        url = "https://api.spotify.com/v1/me/playlists"
-        request = requests.get(
-            url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_token}"
-            }
-        )
+    def get_playlist_collection(self):
+        playlist_collection = {}
+        spotify_song_payload = self.service.get_user_playlist_collection()
+        playlist_items = spotify_song_payload['items']
+        for playlist in playlist_items:
+            playlist_collection[playlist['id']] = playlist['name']
 
-        return json.loads(json.dumps(request.json()))
+        return playlist_collection
 
-    def get_playlist(self, playlist_id):
-        url = "https://api.spotify.com/v1/playlists/{}".format(playlist_id)
-        request = requests.get(
-            url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_token}"
-            }
-        )
+    def get_playlist_dict(self, playlist_collection):
+        playlist_dict = {}
+        for playlist_id in playlist_collection:
+            tracks = self.service.get_playlist(playlist_id)['tracks']
+            songs_list = tracks['items']
+            track_ids = []
+            i = 0
+            while i < len(songs_list):
+                song_dict = {}
+                artist = songs_list[i]['track']['artists'][0]['name']
+                track_name = songs_list[i]['track']['name']
+                song_dict[artist] = track_name
+                track_ids.append(song_dict)
+                i += 1
+            playlist_dict[playlist_collection[playlist_id]] = track_ids
 
-        return json.loads(json.dumps(request.json()))
-
-    def get_track(self, track_id):
-        url = "https://api.spotify.com/v1/tracks/{}".format(track_id)
-        request = requests.get(
-            url,
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_token}"
-            }
-        )
-        return json.loads(json.dumps(request.json()))
+        return playlist_dict
 
 if __name__ == '__main__':
-    p = SpotifyClient()
-    response = p.get_user_playlist_collection()
-    songs = p.get_playlist("3sPFyyILp6d1Zc6SwCq9qH")
-    song = p.get_track("1w3QqUDJ4X339XBGjEJqdX")
-    print(response)
-    # print(response.json())
-
+    client = SpotifyClient()
+    playlists = client.get_playlist_collection()
+    playlist_dict = client.get_playlist_dict(playlists)
+    print(playlist_dict)
